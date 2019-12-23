@@ -36,12 +36,13 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(1101, 577);
+            this.ClientSize = new System.Drawing.Size(450, 162);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FormSleepScreen";
             this.Text = "SleepScreen";
             this.Activated += new System.EventHandler(this.FormSleepScreen_Activated);
             this.Deactivate += new System.EventHandler(this.FormSleepScreen_Deactivate);
+            this.Click += new System.EventHandler(this.FormSleepScreen_Click);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FormSleepScreen_KeyUp);
             this.ResumeLayout(false);
 

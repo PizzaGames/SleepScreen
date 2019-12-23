@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace SleepScreen
@@ -17,6 +18,9 @@ namespace SleepScreen
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        private volatile bool PreventActivation = false;
+        
 
         public FormSleepScreen()
         {
@@ -36,6 +40,7 @@ namespace SleepScreen
                     };
                 default:
                     {
+                        Console.Beep();
                         SleepMonitor();
                         break;
                     }
@@ -44,23 +49,56 @@ namespace SleepScreen
 
         private void WakeUpMonitor()
         {
-            SendMessage(this.Handle, WM_SYSCOMMAND, (IntPtr)SC_MONITORPOWER, IntPtr.Zero);
+            PreventActivation = false;
+
+            CallSysWakeUpMonitor();
             Application.Exit();
         }
 
+        private IntPtr CallSysWakeUpMonitor()
+        {
+            return SendMessage(this.Handle, WM_SYSCOMMAND, (IntPtr)SC_MONITORPOWER, IntPtr.Zero);
+        }
+
         private void SleepMonitor()
+        {
+            new Thread(() => {
+                while (PreventActivation)
+                {
+                    this.Invoke(new MethodInvoker(delegate 
+                            {
+                                CallSysSleepMonitor();
+                            }
+                        )
+                    );
+
+                    Thread.Sleep(1000);
+                }
+            }).Start();
+            
+        }
+
+
+
+        private void CallSysSleepMonitor()
         {
             SendMessage(this.Handle, WM_SYSCOMMAND, (IntPtr)SC_MONITORPOWER, (IntPtr)2);
         }
 
         private void FormSleepScreen_Activated(object sender, EventArgs e)
         {
+            PreventActivation = true;
             SleepMonitor();
         }
 
         private void FormSleepScreen_Deactivate(object sender, EventArgs e)
         {
             WakeUpMonitor();
+        }
+
+        private void FormSleepScreen_Click(object sender, EventArgs e)
+        {
+            Console.Beep();
         }
     }
 }
