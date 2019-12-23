@@ -20,7 +20,7 @@ namespace SleepScreen
         static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         private volatile bool PreventActivation = false;
-        
+        private Thread LastThread = null;
 
         public FormSleepScreen()
         {
@@ -40,7 +40,7 @@ namespace SleepScreen
                     };
                 default:
                     {
-                        Console.Beep();
+                        System.Media.SystemSounds.Beep.Play();
                         SleepMonitor();
                         break;
                     }
@@ -52,6 +52,7 @@ namespace SleepScreen
             PreventActivation = false;
 
             CallSysWakeUpMonitor();
+            System.Media.SystemSounds.Question.Play();
             Application.Exit();
         }
 
@@ -62,19 +63,40 @@ namespace SleepScreen
 
         private void SleepMonitor()
         {
-            new Thread(() => {
-                while (PreventActivation)
-                {
-                    this.Invoke(new MethodInvoker(delegate 
-                            {
-                                CallSysSleepMonitor();
-                            }
-                        )
-                    );
+            if (PreventActivation)
+            {
+                return;
+            }
 
-                    Thread.Sleep(1000);
+            if (LastThread != null)
+            {
+                LastThread.Interrupt();
+            }
+
+            PreventActivation = true;
+
+            LastThread = new Thread(() =>
+            {
+                try
+                {
+                    while (PreventActivation)
+                    {
+                        this.Invoke(new MethodInvoker(delegate
+                                {
+                                    CallSysSleepMonitor();
+                                }
+                            )
+                        );
+
+                        Thread.Sleep(1000);
+                    }
+                } 
+                catch (ThreadInterruptedException e)
+                {
+                    WakeUpMonitor();
                 }
-            }).Start();
+            });
+            LastThread.Start();
             
         }
 
@@ -87,7 +109,6 @@ namespace SleepScreen
 
         private void FormSleepScreen_Activated(object sender, EventArgs e)
         {
-            PreventActivation = true;
             SleepMonitor();
         }
 
@@ -98,7 +119,7 @@ namespace SleepScreen
 
         private void FormSleepScreen_Click(object sender, EventArgs e)
         {
-            Console.Beep();
+            System.Media.SystemSounds.Beep.Play();
         }
     }
 }
